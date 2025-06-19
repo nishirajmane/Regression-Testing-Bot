@@ -1,37 +1,26 @@
-import { test, expect, request } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-test.describe('Login API tests - reqres.in', () => {
-  let context;
+test.describe('Login UI tests - OrangeHRM', () => {
+  test('✅ Successful login navigates to dashboard', async ({ page }) => {
+    await page.goto('https://opensource-demo.orangehrmlive.com/');
 
-  test.beforeAll(async () => {
-    context = await request.newContext();
+    await page.getByPlaceholder('Username').fill('Admin');
+    await page.getByPlaceholder('Password').fill('admin123');
+    await page.getByRole('button', { name: 'Login' }).click();
+
+    await expect(page).toHaveURL(/dashboard/);
+    await page.screenshot({ path: 'login-success.png' });
   });
 
-  test('✅ Successful login returns token', async () => {
-    const response = await context.post('https://reqres.in/api/login', {
-      data: {
-        email: 'eve.holt@reqres.in',
-        password: 'cityslicka',
-      },
-    });
+  test('❌ Unsuccessful login shows error', async ({ page }) => {
+    await page.goto('https://opensource-demo.orangehrmlive.com/');
 
-    expect(response.status()).toBe(200);
-    const body = await response.json();
-    expect(body.token).toBeTruthy();
-    console.log('Token:', body.token);
-  });
+    await page.getByPlaceholder('Username').fill('Admin');
+    await page.getByPlaceholder('Password').fill('wrongpass');
+    await page.getByRole('button', { name: 'Login' }).click();
 
-  test('❌ Unsuccessful login returns error message', async () => {
-    const response = await context.post('https://reqres.in/api/login', {
-      data: {
-        email: 'eve.holt@reqres.in',
-        // password missing
-      },
-    });
-
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body.error).toContain('Missing password');
-    console.log('Error:', body.error);
+    const error = page.getByText('Invalid credentials');
+    await expect(error).toBeVisible();
+    await page.screenshot({ path: 'login-failure.png' });
   });
 });

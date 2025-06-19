@@ -1,14 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../pages/LoginPage';
 
-test('Login fails with invalid credentials', async ({ page }) => {
-  const loginPage = new LoginPage(page);
-  await loginPage.goto();
+test('❌ UI login fails with empty password', async ({ page }) => {
+  await page.goto('https://opensource-demo.orangehrmlive.com/');
 
-  await loginPage.login('invaliduser', 'wrongpass');
+  await page.getByPlaceholder('Username').fill('Admin');
+  await page.getByPlaceholder('Password').fill(''); // blank
+  await page.getByRole('button', { name: 'Login' }).click();
 
-  // This demo site doesn't show error — so just check we didn't land on dashboard
-  await expect(page).not.toHaveURL(/app\.html/);
-
-  await page.screenshot({ path: 'login-failure.png' });
+  const error = page.getByText('Required');
+  await expect(error).toBeVisible();
+  await page.screenshot({ path: 'login-missing-password.png' });
 });
